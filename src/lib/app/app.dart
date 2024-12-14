@@ -3,6 +3,7 @@ import 'package:scientific_calc/ui/dialogs/info_alert/info_alert_dialog.dart';
 import 'package:scientific_calc/features/home/home_view.dart';
 import 'package:scientific_calc/features/startup/startup_view.dart';
 import 'package:scientific_calc/features/calculator/calculator_view.dart';
+import 'package:scientific_calc/features/calculator/calculator_service.dart';
 import 'package:stacked/stacked_annotations.dart';
 import 'package:stacked_services/stacked_services.dart';
 

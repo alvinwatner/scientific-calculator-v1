@@ -4,7 +4,7 @@ class CalculatorService {
   String evaluate(String expression) {
     try {
       // Replace π with its value
-      expression = expression.replaceAll('π', pi.toString());
+      expression = expression.replaceAll('\u03c0', pi.toString());
 
       // Handle basic arithmetic and scientific functions
       double result = _evaluateExpression(expression);
@@ -108,6 +108,8 @@ class CalculatorService {
       return double.parse(tokens[index++]);
     }
 
+    late double Function() parseAddSub;
+
     double parseFactor() {
       if (tokens[index] == '(') {
         index++;
@@ -134,7 +136,7 @@ class CalculatorService {
       return result;
     }
 
-    double parseAddSub() {
+    parseAddSub = () {
       double result = parseMulDiv();
       while (index < tokens.length &&
           (tokens[index] == '+' || tokens[index] == '-')) {
@@ -147,7 +149,7 @@ class CalculatorService {
         }
       }
       return result;
-    }
+    };
 
     return parseAddSub();
   }
