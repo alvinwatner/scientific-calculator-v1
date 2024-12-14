@@ -1,42 +1,70 @@
-import 'dart:math';
+import 'dart:math' as math;
+import 'package:scientific_calc/features/calculator/models/calculator_error.dart';
 
 class CalculatorService {
+  static const double _maxValue = 1e308;
+  static const double _minValue = -1e308;
+  static const double _epsilon = 1e-15;
+
   String evaluate(String expression) {
     try {
+      if (expression.isEmpty) {
+        throw CalculatorError(
+          message: 'Empty expression',
+          type: ErrorType.invalidExpression,
+        );
+      }
+
       // Replace π with its value
-      expression = expression.replaceAll('\u03c0', pi.toString());
+      expression = expression.replaceAll('\u03c0', math.pi.toString());
 
       // Handle basic arithmetic and scientific functions
       double result = _evaluateExpression(expression);
 
-      // Format the result
-      if (result == result.roundToDouble()) {
-        return result.toInt().toString();
-      } else {
-        return result
-            .toStringAsFixed(8)
-            .replaceAll(RegExp(r'0*$'), '')
-            .replaceAll(RegExp(r'\.$'), '');
+      // Validate result bounds
+      if (result.isInfinite) {
+        throw CalculatorError(
+          message: 'Result too large',
+          type: ErrorType.overflow,
+        );
       }
+      if (result != 0 && result.abs() < _epsilon) {
+        throw CalculatorError(
+          message: 'Result too small',
+          type: ErrorType.underflow,
+        );
+      }
+
+      // Format the result
+      if (result.abs() >= 1e16 || (result != 0 && result.abs() < 1e-4)) {
+        return result.toStringAsExponential(12);
+      } else {
+        String formatted = result
+            .toStringAsFixed(12)
+            .replaceAll(RegExp(r'0+$'), '')
+            .replaceAll(RegExp(r'\.$'), '');
+        return formatted.isEmpty ? '0' : formatted;
+      }
+    } on CalculatorError {
+      rethrow;
     } catch (e) {
-      return 'Error';
+      throw CalculatorError(
+        message: 'Invalid expression',
+        type: ErrorType.invalidExpression,
+      );
     }
   }
 
   double _evaluateExpression(String expression) {
-    // Handle scientific functions
     expression = _handleScientificFunctions(expression);
-
-    // Evaluate the resulting expression
     return _evaluateBasicExpression(expression);
   }
 
   String _handleScientificFunctions(String expression) {
-    // Handle sin, cos, tan
     expression = _replaceTrigFunction(expression, 'sin');
     expression = _replaceTrigFunction(expression, 'cos');
     expression = _replaceTrigFunction(expression, 'tan');
-
+    expression = _replaceLogFunction(expression);
     return expression;
   }
 
@@ -50,28 +78,53 @@ class CalculatorService {
       double result;
       switch (funcName) {
         case 'sin':
-          result = sin(value);
+          result = math.sin(value);
           break;
         case 'cos':
-          result = cos(value);
+          result = math.cos(value);
           break;
         case 'tan':
-          result = tan(value);
+          if (math.cos(value).abs() < _epsilon) {
+            throw CalculatorError(
+              message: 'Undefined tangent value',
+              type: ErrorType.calculation,
+            );
+          }
+          result = math.tan(value);
           break;
         default:
-          throw Exception('Unknown function');
+          throw CalculatorError(
+            message: 'Unknown function: $funcName',
+            type: ErrorType.invalidFunction,
+          );
       }
 
-      expression = expression.replaceFirst(
-        regex,
-        result.toString(),
-      );
+      expression = expression.replaceFirst(regex, result.toString());
+    }
+    return expression;
+  }
+
+  String _replaceLogFunction(String expression) {
+    RegExp regex = RegExp(r'log\((.*?)\)');
+    while (expression.contains(regex)) {
+      Match match = regex.firstMatch(expression)!;
+      String arg = match.group(1)!;
+      double value = _evaluateBasicExpression(arg);
+
+      if (value <= 0) {
+        throw CalculatorError(
+          message: 'Invalid logarithm argument',
+          type: ErrorType.calculation,
+        );
+      }
+
+      double result = math.log(value);
+      expression = expression.replaceFirst(regex, result.toString());
     }
     return expression;
   }
 
   double _evaluateBasicExpression(String expression) {
-    // Simple parser for basic arithmetic
     List<String> tokens = _tokenize(expression);
     return _parseExpression(tokens);
   }
@@ -79,19 +132,33 @@ class CalculatorService {
   List<String> _tokenize(String expression) {
     List<String> tokens = [];
     String current = '';
+    String lastChar = '';
 
     for (int i = 0; i < expression.length; i++) {
       String char = expression[i];
+
       if ('+-*/()'.contains(char)) {
         if (current.isNotEmpty) {
           tokens.add(current);
           current = '';
         }
-        tokens.add(char);
+
+        // Handle unary operators
+        if ((char == '+' || char == '-') &&
+            (lastChar.isEmpty ||
+                lastChar == '(' ||
+                '+-*/'.contains(lastChar))) {
+          current = char;
+        } else {
+          tokens.add(char);
+        }
       } else {
         current += char;
       }
+
+      lastChar = char;
     }
+
     if (current.isNotEmpty) {
       tokens.add(current);
     }
@@ -103,18 +170,24 @@ class CalculatorService {
     if (tokens.isEmpty) return 0;
 
     int index = 0;
+    late double Function() parseAddSub;
 
     double parseNumber() {
-      return double.parse(tokens[index++]);
+      String token = tokens[index++];
+      return double.parse(token);
     }
-
-    late double Function() parseAddSub;
 
     double parseFactor() {
       if (tokens[index] == '(') {
         index++;
         double result = parseAddSub();
-        index++; // Skip closing parenthesis
+        if (index >= tokens.length || tokens[index] != ')') {
+          throw CalculatorError(
+            message: 'Mismatched parentheses',
+            type: ErrorType.invalidExpression,
+          );
+        }
+        index++;
         return result;
       } else {
         return parseNumber();
@@ -130,6 +203,12 @@ class CalculatorService {
         if (op == '*') {
           result *= right;
         } else {
+          if (right.abs() < _epsilon) {
+            throw CalculatorError(
+              message: 'Division by zero',
+              type: ErrorType.divisionByZero,
+            );
+          }
           result /= right;
         }
       }

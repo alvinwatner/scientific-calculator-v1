@@ -1,6 +1,6 @@
 {
   "package_name": "com.steve.scientific_calc",
-  "project_description": "The scientific_calc project is a comprehensive Flutter application that showcases a scientific calculator with advanced functionality. The app follows the Stacked architecture, leveraging state management, routing, dependency injection, and custom UI components to provide a robust and user-friendly experience.",
+  "project_description": "The scientific_calc project is a comprehensive Flutter application that showcases a scientific calculator with advanced functionality. The app follows the Stacked architecture, leveraging state management, routing, dependency injection, and custom UI components to provide a robust and user-friendly experience. The calculator supports basic arithmetic operations, as well as scientific functions like trigonometry, and allows users to view their calculation history. The app also includes features like custom dialogs and bottom sheets for displaying information and notices to the user.",
   "architecture_overview": "The application's architecture is built upon the Stacked pattern, which promotes separation of concerns and testability. The main components include:\n\n- App: Defines the app structure, including routes, dependencies, bottom sheets, and dialogs. This allows for easy addition of new features.\n- ViewModels: Responsible for managing the state and business logic of the views, following the MVVM (Model-View-ViewModel) pattern.\n- Views: Presentational components that build the user interface based on the state managed by the ViewModels.\n- Services: Encapsulate shared functionality, such as navigation, dialog, and bottom sheet management, using the Stacked Services library.\n- Utilities: Provide common UI helpers and constants for layout, spacing, and responsive design.",
   "files": [
     {
@@ -645,6 +645,137 @@
         "package:scientific_calc/ui/common/app_colors.dart",
         "package:scientific_calc/ui/common/ui_helpers.dart",
         "package:scientific_calc/ui/dialogs/info_alert/info_alert_dialog_model.dart"
+      ]
+    },
+    {
+      "name": "lib/ui/dialogs/error_alert/error_alert_dialog_model.dart",
+      "description": "The ErrorAlertDialogModel class is responsible for managing the state and behavior of an error alert dialog in the application's user interface. Its primary purpose is to provide a simple way to display an error message to the user and allow them to dismiss the dialog.",
+      "class_diagram": "@startuml\nclass ErrorAlertDialogModel extends BaseViewModel {\n  - _isVisible : bool\n  + isVisible : bool\n  + dismiss() : void\n}\n@enduml",
+      "methods": [
+        {
+          "name": "isVisible",
+          "description": "Returns the current visibility state of the error alert dialog.",
+          "parameters": null,
+          "return_type": "bool"
+        },
+        {
+          "name": "dismiss",
+          "description": "Hides the error alert dialog by setting the `_isVisible` flag to `false` and notifying the listeners of the change.",
+          "parameters": null,
+          "return_type": "void"
+        }
+      ],
+      "dependencies": [
+        "package:stacked/stacked.dart"
+      ]
+    },
+    {
+      "name": "lib/features/calculator/models/calculation_result.dart",
+      "description": "This Dart file defines the `CalculationResult` class, which represents the result of a mathematical calculation performed by a calculator application. The class encapsulates the expression used, the calculated result, the timestamp of the calculation, and a flag indicating whether an error occurred during the calculation.",
+      "class_diagram": "@startuml\nclass CalculationResult {\n  +String expression\n  +String result\n  +DateTime timestamp\n  +bool isError\n  +toJson(): Map<String, dynamic>\n  +fromJson(Map<String, dynamic>): CalculationResult\n}\n@enduml",
+      "methods": [
+        {
+          "name": "toJson",
+          "description": "Converts the `CalculationResult` object to a JSON-serializable map.",
+          "parameters": null,
+          "return_type": "Map<String, dynamic>"
+        },
+        {
+          "name": "fromJson",
+          "description": "Constructs a `CalculationResult` object from a JSON map.",
+          "parameters": [
+            "Map<String, dynamic>"
+          ],
+          "return_type": "CalculationResult"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "lib/features/calculator/models/calculator_error.dart",
+      "description": "This Dart file defines a custom `CalculatorError` class that represents errors that can occur during the execution of a calculator application. It also defines an `ErrorType` enum that categorizes the different types of errors that can occur.",
+      "class_diagram": "@startuml\nclass CalculatorError {\n  +String message\n  +String? details\n  +ErrorType type\n  +CalculatorError({message, details, type})\n  +toString(): String\n}\n\nenum ErrorType {\n  divisionByZero\n  invalidExpression\n  overflow\n  underflow\n  invalidFunction\n  calculation\n}\n@enduml",
+      "methods": [
+        {
+          "name": "CalculatorError",
+          "description": "Constructor for the CalculatorError class, which takes in a required message parameter, an optional details parameter, and an optional type parameter (defaulting to ErrorType.calculation).",
+          "parameters": [
+            "message",
+            "details",
+            "type"
+          ],
+          "return_type": null
+        },
+        {
+          "name": "toString",
+          "description": "Overrides the default toString() method to return the error message.",
+          "parameters": [],
+          "return_type": "String"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "name": "lib/features/calculator/widgets/calculation_history.dart",
+      "description": "The `CalculationHistory` widget is responsible for displaying the history of calculations performed in a calculator application. It provides a UI component that shows the previous calculation expressions, results, and timestamps, allowing users to easily review and interact with their calculation history.",
+      "class_diagram": "@startuml\nclass CalculationHistory {\n  -List<CalculationResult> history\n  -Function(CalculationResult) onHistoryItemTapped\n  +build(context): Widget\n}\n\nclass CalculationResult {\n  +String expression\n  +String result\n  +DateTime timestamp\n}\n@enduml",
+      "methods": [
+        {
+          "name": "build",
+          "description": "Constructs the UI for the calculation history, displaying a list of previous calculation results with their expressions, results, and timestamps. Users can tap on a history item to perform some action, such as recalculating the expression.",
+          "parameters": [
+            "context"
+          ],
+          "return_type": "Widget"
+        }
+      ],
+      "dependencies": [
+        "package:flutter/material.dart",
+        "package:scientific_calc/features/calculator/models/calculation_result.dart",
+        "package:scientific_calc/ui/common/app_colors.dart",
+        "package:scientific_calc/ui/common/ui_helpers.dart"
+      ]
+    },
+    {
+      "name": "lib/ui/dialogs/error_alert/error_alert_dialog.dart",
+      "description": "This Dart file defines the `ErrorAlertDialog` class, which is responsible for displaying an error alert dialog in the application. The dialog is used to inform the user of any errors or issues that have occurred during the application's execution.",
+      "class_diagram": "@startuml\n  class ErrorAlertDialog {\n    + ErrorAlertDialog(request, completer)\n    + Widget builder(context, viewModel, child)\n    + ErrorAlertDialogModel viewModelBuilder(context)\n  }\n\n  class ErrorAlertDialogModel {\n  }\n\n  ErrorAlertDialog --> ErrorAlertDialogModel\n  @enduml",
+      "methods": [
+        {
+          "name": "ErrorAlertDialog",
+          "description": "The constructor for the `ErrorAlertDialog` class, which takes in a `DialogRequest` and a `Function(DialogResponse)` as parameters. These are used to configure the dialog's content and handle the user's response.",
+          "parameters": [
+            "DialogRequest request",
+            "Function(DialogResponse) completer"
+          ],
+          "return_type": null
+        },
+        {
+          "name": "builder",
+          "description": "The `builder` method is responsible for constructing the UI of the error alert dialog. It takes in the `BuildContext`, the `ErrorAlertDialogModel` view model, and an optional child widget as parameters. This method returns the `Dialog` widget that represents the error alert dialog.",
+          "parameters": [
+            "BuildContext context",
+            "ErrorAlertDialogModel viewModel",
+            "Widget? child"
+          ],
+          "return_type": "Widget"
+        },
+        {
+          "name": "viewModelBuilder",
+          "description": "The `viewModelBuilder` method is responsible for creating an instance of the `ErrorAlertDialogModel` class, which is used to manage the state and logic of the error alert dialog.",
+          "parameters": [
+            "BuildContext context"
+          ],
+          "return_type": "ErrorAlertDialogModel"
+        }
+      ],
+      "dependencies": [
+        "package:flutter/material.dart",
+        "package:stacked/stacked.dart",
+        "package:stacked_services/stacked_services.dart",
+        "package:scientific_calc/ui/common/app_colors.dart",
+        "package:scientific_calc/ui/common/ui_helpers.dart",
+        "package:scientific_calc/ui/dialogs/error_alert/error_alert_dialog_model.dart"
       ]
     }
   ],
