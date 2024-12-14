@@ -87,7 +87,6 @@ class CalculatorViewModel extends BaseViewModel {
       await _dialogService.showDialog(
         title: 'Calculation Error',
         description: e.message,
-        dialogPriority: DialogPriority.high,
       );
     } catch (e) {
       _result = 'Error';
@@ -95,7 +94,6 @@ class CalculatorViewModel extends BaseViewModel {
       await _dialogService.showDialog(
         title: 'Unexpected Error',
         description: 'Please check your input and try again.',
-        dialogPriority: DialogPriority.high,
       );
     }
     notifyListeners();

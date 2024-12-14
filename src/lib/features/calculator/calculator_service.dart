@@ -170,6 +170,7 @@ class CalculatorService {
     if (tokens.isEmpty) return 0;
 
     int index = 0;
+    late double Function() parseAddSub;
 
     double parseNumber() {
       String token = tokens[index++];
@@ -214,7 +215,7 @@ class CalculatorService {
       return result;
     }
 
-    double parseAddSub() {
+    parseAddSub = () {
       double result = parseMulDiv();
       while (index < tokens.length &&
           (tokens[index] == '+' || tokens[index] == '-')) {
@@ -227,15 +228,8 @@ class CalculatorService {
         }
       }
       return result;
-    }
+    };
 
-    double result = parseAddSub();
-    if (index < tokens.length) {
-      throw CalculatorError(
-        message: 'Invalid expression',
-        type: ErrorType.invalidExpression,
-      );
-    }
-    return result;
+    return parseAddSub();
   }
 }
